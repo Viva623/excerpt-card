@@ -1006,6 +1006,6 @@ function addEcmButton() {
 (function init() {
     loadEcmSettingsUI();
     // 게시판 버튼이 나중에 로드될 수 있으니 약간 딜레이
-    setTimeout(addEcmButton, 500);
+    setTimeout(addEcmButton, 1500);
     console.log('[Excerpt Card Maker] Extension loaded!');
 })();
