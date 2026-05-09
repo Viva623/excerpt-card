@@ -945,28 +945,34 @@ function loadEcmSettingsUI() {
 
 // ── Main Button ───────────────────────────────────────────────
 function addEcmButton() {
-    // 기존 버튼 제거
     document.getElementById('excerpt-card-btn')?.remove();
 
-    // extensionsMenuDiv 안에 버튼 추가
     const extensionsMenu = document.getElementById('extensionsMenu');
     if (extensionsMenu) {
-        const menuItem = document.createElement('div');
-        menuItem.id = 'excerpt-card-btn';
-        menuItem.className = 'list-group-item flex-container flexGap5';
-        menuItem.style.cssText = 'cursor:pointer;';
-        menuItem.innerHTML = '<span>💌</span><span>발췌 카드</span>';
-        menuItem.addEventListener('click', () => {
-            // 메뉴 닫기
-            document.getElementById('extensionsMenu')?.closest('.popup')?.querySelector('.popup-button-close')?.click();
-            showExcerptCardPopup();
+        const container = document.createElement('div');
+        container.id = 'excerpt-card-btn';
+        container.className = 'extension_container interactable';
+        container.tabIndex = 0;
+        container.innerHTML = `
+            <div class="list-group-item flex-container flexGap5 interactable" tabindex="0" role="listitem">
+                <div class="fa-fw extensionsMenuExtensionButton" style="font-style:normal;">💌</div>
+                <span>발췌 카드</span>
+            </div>`;
+        container.addEventListener('click', () => {
+            // 메뉴 팝업 닫기
+            const popup = extensionsMenu.closest('.popup');
+            if (popup) {
+                const closeBtn = popup.querySelector('.popup-button-close') || popup.querySelector('.menu_button');
+                if (closeBtn) closeBtn.click();
+            }
+            setTimeout(() => showExcerptCardPopup(), 100);
         });
-        extensionsMenu.appendChild(menuItem);
+        extensionsMenu.appendChild(container);
         console.log('[ECM] Added to extensions menu');
         return;
     }
 
-    // extensionsMenu 없으면 send_form에 fallback
+    // fallback
     const sendForm = document.getElementById('send_form');
     if (!sendForm) return;
     const btn = document.createElement('div');
