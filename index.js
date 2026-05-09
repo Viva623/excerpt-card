@@ -9,6 +9,7 @@ const ecmState = {
     theme: 'light',
     font: 'font-serif',
     fontBold: false,
+    textAlign: 'left',
     photoMode: false,
     photoDataUrl: '',
     photoImage: null,
@@ -36,6 +37,7 @@ function saveEcmState() {
     settings.theme = ecmState.theme;
     settings.font = ecmState.font;
     settings.fontBold = ecmState.fontBold;
+    settings.textAlign = ecmState.textAlign;
     settings.photoMode = ecmState.photoMode;
     settings.photoOverlay = ecmState.photoOverlay;
     settings.photoRatio = ecmState.photoRatio;
@@ -52,6 +54,7 @@ function loadEcmState() {
     if (settings.theme) ecmState.theme = settings.theme;
     if (settings.font) ecmState.font = settings.font;
     ecmState.fontBold = Boolean(settings.fontBold);
+    ecmState.textAlign = settings.textAlign || 'left';
     ecmState.photoMode = Boolean(settings.photoMode);
     ecmState.photoOverlay = settings.photoOverlay || 'blue';
     ecmState.photoRatio = settings.photoRatio || 'portrait';
@@ -135,6 +138,44 @@ function ecmDrawTextLine(ctx, text, x, y, sizePx) {
         if (isDots) i += 2;
     }
     ctx.font = baseFont;
+}
+
+// ── Canvas에서 정렬된 텍스트 그리기 ──────────────────────────
+function ecmDrawAlignedLine(ctx, text, left, right, y, sizePx) {
+    const align = ecmState.textAlign;
+
+    if (align === 'center') {
+        const mid = (left + right) / 2;
+        const lineWidth = ctx.measureText(text).width;
+        ecmDrawTextLine(ctx, text, mid - lineWidth / 2, y, sizePx);
+    } else if (align === 'justify') {
+        // 양쪽맞춤: 글자 사이 간격을 균등 배분
+        const chars = Array.from(String(text));
+        if (chars.length <= 1) {
+            ecmDrawTextLine(ctx, text, left, y, sizePx);
+            return;
+        }
+        const totalWidth = right - left;
+        const textWidth = ctx.measureText(text).width;
+        const extraSpace = totalWidth - textWidth;
+        const gapCount = chars.length - 1;
+        const extraPerGap = gapCount > 0 ? extraSpace / gapCount : 0;
+
+        const baseFont = ecmGetCanvasFont(sizePx);
+        let cursor = left;
+        for (let i = 0; i < chars.length; i++) {
+            const isDots = chars[i] === '.' && chars[i + 1] === '.' && chars[i + 2] === '.';
+            const chunk = isDots ? '...' : chars[i];
+            ctx.font = baseFont;
+            ctx.fillText(chunk, cursor, isDots ? y - Math.max(2, sizePx * 0.12) : y);
+            cursor += ctx.measureText(chunk).width + extraPerGap;
+            if (isDots) i += 2;
+        }
+        ctx.font = baseFont;
+    } else {
+        // left (기본)
+        ecmDrawTextLine(ctx, text, left, y, sizePx);
+    }
 }
 
 function ecmGetTextSize(excerpt) {
@@ -243,12 +284,24 @@ function ecmRenderCard(excerpt, title, publisher) {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
 
-    const lines = ecmWrapText(ctx, excerpt, 880);
+    const padLeft = 72;
+    const padRight = 952; // 1024 - 72
+    const maxWidth = padRight - padLeft;
+    const lines = ecmWrapText(ctx, excerpt, maxWidth);
     const textH = lines.length * ts.lineHeight;
     let y = 72 + ((845 - 72) - textH) / 2;
     y = Math.max(72, y);
-    lines.forEach(line => {
-        ecmDrawTextLine(ctx, line, 72, y, ts.size);
+
+    lines.forEach((line, i) => {
+        // 마지막 줄은 양쪽맞춤에서도 왼쪽정렬
+        const isLast = i === lines.length - 1;
+        if (ecmState.textAlign === 'justify' && !isLast) {
+            ecmDrawAlignedLine(ctx, line, padLeft, padRight, y, ts.size);
+        } else if (ecmState.textAlign === 'center') {
+            ecmDrawAlignedLine(ctx, line, padLeft, padRight, y, ts.size);
+        } else {
+            ecmDrawTextLine(ctx, line, padLeft, y, ts.size);
+        }
         y += ts.lineHeight;
     });
 
@@ -307,9 +360,20 @@ function ecmRenderPhotoCard(excerpt, title, publisher) {
     ctx.fillStyle = paint.text;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
+
+    const textLeft = bx + pad;
+    const textRight = bx + bw - pad;
     let y = by + Math.max(pad, (bh - textH) / 2);
-    ts.lines.forEach(line => {
-        ecmDrawTextLine(ctx, line, bx + pad, y, ts.size);
+
+    ts.lines.forEach((line, i) => {
+        const isLast = i === ts.lines.length - 1;
+        if (ecmState.textAlign === 'justify' && !isLast) {
+            ecmDrawAlignedLine(ctx, line, textLeft, textRight, y, ts.size);
+        } else if (ecmState.textAlign === 'center') {
+            ecmDrawAlignedLine(ctx, line, textLeft, textRight, y, ts.size);
+        } else {
+            ecmDrawTextLine(ctx, line, textLeft, y, ts.size);
+        }
         y += ts.lineHeight;
     });
 
@@ -344,11 +408,13 @@ function ecmUpdateCard(overlay) {
     const preview = overlay.querySelector('.ecm-card-preview');
     if (!preview) return;
 
+    const alignClass = `ecm-align-${ecmState.textAlign}`;
+
     if (ecmState.photoMode) {
         const bg = ecmState.photoDataUrl
             ? `style="background-image:url('${ecmState.photoDataUrl.replace(/'/g, '%27')}')"` : '';
         preview.innerHTML = `
-            <div class="ecm-photo-card ecm-font-${ecmState.font.replace('font-', '')} ${ecmState.fontBold ? 'ecm-font-bold' : ''} ecm-ratio-${ecmState.photoRatio} ecm-overlay-${ecmState.photoOverlay}" ${bg}>
+            <div class="ecm-photo-card ${alignClass} ecm-font-${ecmState.font.replace('font-', '')} ${ecmState.fontBold ? 'ecm-font-bold' : ''} ecm-ratio-${ecmState.photoRatio} ecm-overlay-${ecmState.photoOverlay}" ${bg}>
                 <div class="ecm-photo-dim"></div>
                 <div class="ecm-photo-stack">
                     <div class="ecm-photo-glass">
@@ -365,7 +431,7 @@ function ecmUpdateCard(overlay) {
 
     const sizeClass = ecmGetPreviewSizeClass(excerpt);
     preview.innerHTML = `
-        <div class="ecm-excerpt-card ecm-card-${ecmState.theme} ecm-font-${ecmState.font.replace('font-', '')} ${ecmState.fontBold ? 'ecm-font-bold' : ''}">
+        <div class="ecm-excerpt-card ${alignClass} ecm-card-${ecmState.theme} ecm-font-${ecmState.font.replace('font-', '')} ${ecmState.fontBold ? 'ecm-font-bold' : ''}">
             <div class="ecm-text-wrapper">
                 <p class="ecm-excerpt-text ${sizeClass}">${ecmFormatHtml(excerpt)}</p>
             </div>
@@ -531,6 +597,25 @@ function ecmBuildPopupHtml() {
             </div>
         </div>
 
+        <!-- Text Align -->
+        <div class="ecm-section">
+            <div class="ecm-section-label">텍스트 정렬</div>
+            <div class="ecm-grid">
+                <button class="ecm-opt-btn active" type="button" data-ecm-align="left">
+                    <div class="ecm-opt-preview align-preview">☰</div>
+                    <span class="ecm-opt-name">왼쪽</span>
+                </button>
+                <button class="ecm-opt-btn" type="button" data-ecm-align="center">
+                    <div class="ecm-opt-preview align-preview">☰</div>
+                    <span class="ecm-opt-name">중앙</span>
+                </button>
+                <button class="ecm-opt-btn" type="button" data-ecm-align="justify">
+                    <div class="ecm-opt-preview align-preview">☰</div>
+                    <span class="ecm-opt-name">양쪽맞춤</span>
+                </button>
+            </div>
+        </div>
+
         <!-- Content -->
         <div class="ecm-section">
             <div class="ecm-section-label">내용 입력</div>
@@ -677,6 +762,11 @@ function showExcerptCardPopup() {
         btn.classList.toggle('active', btn.dataset.ecmFont === ecmState.font);
     });
 
+    // Align buttons
+    overlay.querySelectorAll('[data-ecm-align]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.ecmAlign === ecmState.textAlign);
+    });
+
     // Replace rows
     const savedRows = Array.isArray(saved.replacements) ? saved.replacements : [];
     const hasRows = savedRows.some(r => r?.from || r?.to);
@@ -716,6 +806,17 @@ function showExcerptCardPopup() {
             ecmState.font = fontBtn.dataset.ecmFont;
             overlay.querySelectorAll('[data-ecm-font]').forEach(b => {
                 b.classList.toggle('active', b.dataset.ecmFont === ecmState.font);
+            });
+            schedule();
+            return;
+        }
+
+        // Align buttons
+        const alignBtn = target.closest('[data-ecm-align]');
+        if (alignBtn) {
+            ecmState.textAlign = alignBtn.dataset.ecmAlign;
+            overlay.querySelectorAll('[data-ecm-align]').forEach(b => {
+                b.classList.toggle('active', b.dataset.ecmAlign === ecmState.textAlign);
             });
             schedule();
             return;
@@ -790,7 +891,6 @@ function showExcerptCardPopup() {
     overlay.addEventListener('change', (e) => {
         const target = e.target;
 
-        // Photo mode toggle
         if (target.id === 'ecm-photo-mode') {
             ecmState.photoMode = target.checked;
             const opts = overlay.querySelector('#ecm-photo-options');
@@ -799,28 +899,24 @@ function showExcerptCardPopup() {
             return;
         }
 
-        // Font bold
         if (target.id === 'ecm-font-bold') {
             ecmState.fontBold = target.checked;
             schedule();
             return;
         }
 
-        // Photo overlay
         if (target.id === 'ecm-photo-overlay') {
             ecmState.photoOverlay = target.value;
             schedule();
             return;
         }
 
-        // Photo ratio
         if (target.id === 'ecm-photo-ratio') {
             ecmState.photoRatio = target.value;
             schedule();
             return;
         }
 
-        // Photo file
         if (target.id === 'ecm-photo-input') {
             const file = target.files?.[0];
             if (!file) return;
@@ -844,7 +940,6 @@ function showExcerptCardPopup() {
     // ESC key
     const escHandler = (e) => {
         if (e.key === 'Escape') {
-            // Close result overlay first if open
             const resultEl = overlay.querySelector('.ecm-result-overlay.ecm-show');
             if (resultEl) {
                 resultEl.classList.remove('ecm-show');
@@ -882,6 +977,21 @@ function loadEcmSettingsUI() {
 
 // ── Main Button ───────────────────────────────────────────────
 function addEcmButton() {
+    // 게시판 버튼 옆에 삽입
+    const boardBtn = document.getElementById('community-board-btn');
+    if (boardBtn && boardBtn.parentElement) {
+        const btn = document.createElement('div');
+        btn.id = 'excerpt-card-btn';
+        btn.textContent = '💌';
+        btn.title = '발췌 카드 만들기';
+        btn.style.cssText = 'position:relative;cursor:pointer;font-size:1.2em;padding:3px 5px;border-radius:5px;transition:background 0.2s;z-index:9999;';
+        btn.addEventListener('click', () => showExcerptCardPopup());
+        // 게시판 버튼 바로 뒤에 삽입
+        boardBtn.insertAdjacentElement('afterend', btn);
+        return;
+    }
+
+    // 게시판 버튼이 없으면 send_form에 추가
     const sendForm = document.getElementById('send_form');
     if (!sendForm) return;
 
@@ -890,17 +1000,14 @@ function addEcmButton() {
     btn.textContent = '💌';
     btn.title = '발췌 카드 만들기';
     btn.style.cssText = 'position:relative;cursor:pointer;font-size:1.2em;padding:3px 5px;border-radius:5px;transition:background 0.2s;z-index:9999;';
-
-    btn.addEventListener('click', () => {
-        showExcerptCardPopup();
-    });
-
+    btn.addEventListener('click', () => showExcerptCardPopup());
     sendForm.appendChild(btn);
 }
 
 // ── Init ──────────────────────────────────────────────────────
 (function init() {
     loadEcmSettingsUI();
-    addEcmButton();
+    // 게시판 버튼이 나중에 로드될 수 있으니 약간 딜레이
+    setTimeout(addEcmButton, 500);
     console.log('[Excerpt Card Maker] Extension loaded!');
 })();
