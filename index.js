@@ -984,10 +984,9 @@ function addEcmButton() {
     btn.id = 'excerpt-card-btn';
     btn.textContent = '💌';
     btn.title = '발췌 카드 만들기';
-    btn.style.cssText = 'cursor:pointer;font-size:1.2em;padding:3px 5px;border-radius:5px;transition:background 0.2s;z-index:9999;order:-1;';
+    btn.style.cssText = 'cursor:pointer;font-size:1.2em;padding:3px 5px;border-radius:5px;transition:background 0.2s;z-index:9999;align-self:flex-start;';
     btn.addEventListener('click', () => showExcerptCardPopup());
 
-    // 게시판 버튼이 있으면 그 옆에, 없으면 send_form 맨 앞에
     const boardBtn = document.getElementById('community-board-btn');
     if (boardBtn) {
         boardBtn.insertAdjacentElement('afterend', btn);
