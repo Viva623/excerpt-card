@@ -92,7 +92,7 @@
     font-family: 'Noto Sans KR', sans-serif;
 }
 
-/* ── Theme / Font Grid ───────────────────────────── */
+/* ── Theme / Font / Align Grid ───────────────────── */
 .ecm-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -131,6 +131,12 @@
 .ecm-opt-preview.font-serif { font-family: 'Noto Serif KR', serif; background: #fff; border: 1px solid #e8e4dc; color: #333; }
 .ecm-opt-preview.font-sans { font-family: 'Noto Sans KR', sans-serif; background: #fff; border: 1px solid #e8e4dc; color: #333; }
 .ecm-opt-preview.font-gowun { font-family: 'Gowun Dodum', sans-serif; background: #fff; border: 1px solid #e8e4dc; color: #333; }
+.ecm-opt-preview.align-preview {
+    background: #fff;
+    border: 1px solid #e8e4dc;
+    color: #333;
+    font-size: 18px;
+}
 .ecm-opt-name {
     font-size: 10px;
     font-weight: 500;
@@ -224,21 +230,6 @@
     line-height: 1.4;
     -webkit-appearance: none;
     appearance: none;
-}
-.ecm-file-input::file-selector-button {
-    background: #4f80ff;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-family: 'Noto Sans KR', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-right: 10px;
-}
-.ecm-file-input::file-selector-button:hover {
-    background: #3d6be6;
 }
 .ecm-file-input::file-selector-button {
     background: #4f80ff;
@@ -389,10 +380,13 @@
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    text-align: left;
     overflow: hidden;
     min-height: 0;
 }
+.ecm-align-left .ecm-text-wrapper { text-align: left; }
+.ecm-align-center .ecm-text-wrapper { text-align: center; align-items: center; }
+.ecm-align-justify .ecm-text-wrapper { text-align: justify; }
+
 .ecm-excerpt-text { width: 100%; margin: 0; word-break: keep-all; }
 .ecm-text-l { font-size: 15px; line-height: 2.0; }
 .ecm-text-m { font-size: 14px; line-height: 1.9; }
@@ -502,6 +496,11 @@
     font-size: 11px;
     color: rgba(255,255,255,0.86);
 }
+
+/* ── Photo Align ─────────────────────────────────── */
+.ecm-align-left .ecm-photo-text { text-align: left; }
+.ecm-align-center .ecm-photo-text { text-align: center; }
+.ecm-align-justify .ecm-photo-text { text-align: justify; }
 
 /* ── Raised Dots ─────────────────────────────────── */
 .ecm-raised-dots {
