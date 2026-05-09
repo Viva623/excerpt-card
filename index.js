@@ -945,7 +945,6 @@ function loadEcmSettingsUI() {
 
 // ── Main Button ───────────────────────────────────────────────
 function addEcmButton() {
-    // 기존 버튼 있으면 제거
     document.getElementById('excerpt-card-btn')?.remove();
 
     const btn = document.createElement('div');
@@ -955,24 +954,22 @@ function addEcmButton() {
     btn.style.cssText = 'cursor:pointer;font-size:1.2em;padding:3px 5px;border-radius:5px;transition:background 0.2s;z-index:9999;';
     btn.addEventListener('click', () => showExcerptCardPopup());
 
-    // wrapper 찾아서 넣기
     const wrapper = document.getElementById('cb-btn-wrapper');
     if (wrapper) {
         wrapper.appendChild(btn);
         console.log('[ECM] Button added to wrapper, children:', wrapper.children.length);
     } else {
-        // wrapper 없으면 새로 만들기
         const newWrapper = document.createElement('div');
         newWrapper.id = 'cb-btn-wrapper';
-        newWrapper.style.cssText = 'display:flex;flex-direction:row;gap:4px;align-self:flex-start;';
+        newWrapper.style.cssText = 'display:flex;flex-direction:row;gap:4px;align-items:center;flex-shrink:0;';
         newWrapper.appendChild(btn);
-        const sendForm = document.getElementById('send_form');
-        if (sendForm && sendForm.firstChild) {
-            sendForm.insertBefore(newWrapper, sendForm.firstChild);
-        } else if (sendForm) {
-            sendForm.appendChild(newWrapper);
+        const target = document.getElementById('nonQRFormItems') || document.getElementById('send_form');
+        if (target && target.firstChild) {
+            target.insertBefore(newWrapper, target.firstChild);
+        } else if (target) {
+            target.appendChild(newWrapper);
         }
-        console.log('[ECM] Created new wrapper');
+        console.log('[ECM] Created new wrapper in', target?.id);
     }
 }
 
