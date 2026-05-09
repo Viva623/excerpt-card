@@ -140,7 +140,6 @@ function ecmDrawTextLine(ctx, text, x, y, sizePx) {
     ctx.font = baseFont;
 }
 
-// ── Canvas에서 정렬된 텍스트 그리기 ──────────────────────────
 function ecmDrawAlignedLine(ctx, text, left, right, y, sizePx) {
     const align = ecmState.textAlign;
 
@@ -149,7 +148,6 @@ function ecmDrawAlignedLine(ctx, text, left, right, y, sizePx) {
         const lineWidth = ctx.measureText(text).width;
         ecmDrawTextLine(ctx, text, mid - lineWidth / 2, y, sizePx);
     } else if (align === 'justify') {
-        // 양쪽맞춤: 글자 사이 간격을 균등 배분
         const chars = Array.from(String(text));
         if (chars.length <= 1) {
             ecmDrawTextLine(ctx, text, left, y, sizePx);
@@ -173,7 +171,6 @@ function ecmDrawAlignedLine(ctx, text, left, right, y, sizePx) {
         }
         ctx.font = baseFont;
     } else {
-        // left (기본)
         ecmDrawTextLine(ctx, text, left, y, sizePx);
     }
 }
@@ -285,7 +282,7 @@ function ecmRenderCard(excerpt, title, publisher) {
     ctx.textBaseline = 'top';
 
     const padLeft = 72;
-    const padRight = 952; // 1024 - 72
+    const padRight = 952;
     const maxWidth = padRight - padLeft;
     const lines = ecmWrapText(ctx, excerpt, maxWidth);
     const textH = lines.length * ts.lineHeight;
@@ -293,7 +290,6 @@ function ecmRenderCard(excerpt, title, publisher) {
     y = Math.max(72, y);
 
     lines.forEach((line, i) => {
-        // 마지막 줄은 양쪽맞춤에서도 왼쪽정렬
         const isLast = i === lines.length - 1;
         if (ecmState.textAlign === 'justify' && !isLast) {
             ecmDrawAlignedLine(ctx, line, padLeft, padRight, y, ts.size);
@@ -707,12 +703,10 @@ function ecmAddReplaceRow(overlay, from, to) {
 
 // ── Show Popup ────────────────────────────────────────────────
 function showExcerptCardPopup() {
-    // Remove existing
     document.querySelector('.ecm-overlay')?.remove();
 
     const saved = loadEcmState();
 
-    // Create overlay
     const overlay = document.createElement('div');
     overlay.className = 'ecm-overlay';
 
@@ -722,7 +716,6 @@ function showExcerptCardPopup() {
     overlay.appendChild(popup);
     document.body.appendChild(overlay);
 
-    // Helper to schedule saves
     const schedule = () => {
         ecmUpdateCount(overlay);
         ecmUpdateCard(overlay);
@@ -752,22 +745,18 @@ function showExcerptCardPopup() {
     const fontBoldEl = overlay.querySelector('#ecm-font-bold');
     if (fontBoldEl) fontBoldEl.checked = ecmState.fontBold;
 
-    // Theme buttons
     overlay.querySelectorAll('[data-ecm-theme]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.ecmTheme === ecmState.theme);
     });
 
-    // Font buttons
     overlay.querySelectorAll('[data-ecm-font]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.ecmFont === ecmState.font);
     });
 
-    // Align buttons
     overlay.querySelectorAll('[data-ecm-align]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.ecmAlign === ecmState.textAlign);
     });
 
-    // Replace rows
     const savedRows = Array.isArray(saved.replacements) ? saved.replacements : [];
     const hasRows = savedRows.some(r => r?.from || r?.to);
     const rows = hasRows ? savedRows : [{ from: '', to: '{{char}}' }, { from: '', to: '{{user}}' }];
@@ -777,19 +766,9 @@ function showExcerptCardPopup() {
     overlay.addEventListener('click', (e) => {
         const target = e.target;
 
-        // Close overlay (click on background)
-        if (target === overlay) {
-            overlay.remove();
-            return;
-        }
+        if (target === overlay) { overlay.remove(); return; }
+        if (target.closest('.ecm-close-btn')) { overlay.remove(); return; }
 
-        // Close button
-        if (target.closest('.ecm-close-btn')) {
-            overlay.remove();
-            return;
-        }
-
-        // Theme buttons
         const themeBtn = target.closest('[data-ecm-theme]');
         if (themeBtn) {
             ecmState.theme = themeBtn.dataset.ecmTheme;
@@ -800,7 +779,6 @@ function showExcerptCardPopup() {
             return;
         }
 
-        // Font buttons
         const fontBtn = target.closest('[data-ecm-font]');
         if (fontBtn) {
             ecmState.font = fontBtn.dataset.ecmFont;
@@ -811,7 +789,6 @@ function showExcerptCardPopup() {
             return;
         }
 
-        // Align buttons
         const alignBtn = target.closest('[data-ecm-align]');
         if (alignBtn) {
             ecmState.textAlign = alignBtn.dataset.ecmAlign;
@@ -822,14 +799,12 @@ function showExcerptCardPopup() {
             return;
         }
 
-        // Clear excerpt
         if (target.closest('#ecm-clear-excerpt')) {
             if (excerptEl) { excerptEl.value = ''; excerptEl.focus(); }
             schedule();
             return;
         }
 
-        // Add replace pair
         if (target.closest('#ecm-add-replace')) {
             ecmAddReplaceRow(overlay, '', '{{char}}');
             ecmAddReplaceRow(overlay, '', '{{user}}');
@@ -837,7 +812,6 @@ function showExcerptCardPopup() {
             return;
         }
 
-        // Remove replace row
         const removeBtn = target.closest('.ecm-replace-remove');
         if (removeBtn && removeBtn.id !== 'ecm-clear-photo') {
             const row = removeBtn.closest('.ecm-replace-row');
@@ -849,7 +823,6 @@ function showExcerptCardPopup() {
             return;
         }
 
-        // Clear photo
         if (target.closest('#ecm-clear-photo')) {
             ecmState.photoDataUrl = '';
             ecmState.photoImage = null;
@@ -859,13 +832,11 @@ function showExcerptCardPopup() {
             return;
         }
 
-        // Save button
         if (target.closest('.ecm-save-btn')) {
             ecmGenerate(overlay);
             return;
         }
 
-        // Result close
         if (target.closest('.ecm-result-close') || target.classList.contains('ecm-result-overlay')) {
             const resultEl = overlay.querySelector('.ecm-result-overlay');
             if (resultEl) resultEl.classList.remove('ecm-show');
@@ -879,7 +850,6 @@ function showExcerptCardPopup() {
         }
     });
 
-    // ── Change Events ──
     overlay.addEventListener('input', (e) => {
         const target = e.target;
         if (target.id === 'ecm-excerpt' || target.id === 'ecm-title' || target.id === 'ecm-publisher' ||
@@ -937,7 +907,6 @@ function showExcerptCardPopup() {
         }
     });
 
-    // ESC key
     const escHandler = (e) => {
         if (e.key === 'Escape') {
             const resultEl = overlay.querySelector('.ecm-result-overlay.ecm-show');
@@ -951,7 +920,6 @@ function showExcerptCardPopup() {
     };
     document.addEventListener('keydown', escHandler);
 
-    // Initial render
     ecmUpdateCount(overlay);
     ecmUpdateCard(overlay);
 }
@@ -977,6 +945,9 @@ function loadEcmSettingsUI() {
 
 // ── Main Button ───────────────────────────────────────────────
 function addEcmButton() {
+    // 기존 버튼 있으면 제거
+    document.getElementById('excerpt-card-btn')?.remove();
+
     const btn = document.createElement('div');
     btn.id = 'excerpt-card-btn';
     btn.textContent = '💌';
@@ -984,11 +955,13 @@ function addEcmButton() {
     btn.style.cssText = 'cursor:pointer;font-size:1.2em;padding:3px 5px;border-radius:5px;transition:background 0.2s;z-index:9999;';
     btn.addEventListener('click', () => showExcerptCardPopup());
 
-    // wrapper가 있으면 그 안에 추가, 없으면 새로 만들어서 삽입
+    // wrapper 찾아서 넣기
     const wrapper = document.getElementById('cb-btn-wrapper');
     if (wrapper) {
         wrapper.appendChild(btn);
+        console.log('[ECM] Button added to wrapper, children:', wrapper.children.length);
     } else {
+        // wrapper 없으면 새로 만들기
         const newWrapper = document.createElement('div');
         newWrapper.id = 'cb-btn-wrapper';
         newWrapper.style.cssText = 'display:flex;flex-direction:row;gap:4px;align-self:flex-start;';
@@ -999,13 +972,13 @@ function addEcmButton() {
         } else if (sendForm) {
             sendForm.appendChild(newWrapper);
         }
+        console.log('[ECM] Created new wrapper');
     }
 }
 
 // ── Init ──────────────────────────────────────────────────────
 (function init() {
     loadEcmSettingsUI();
-    // 게시판 버튼이 나중에 로드될 수 있으니 약간 딜레이
     setTimeout(addEcmButton, 1500);
     console.log('[Excerpt Card Maker] Extension loaded!');
 })();
