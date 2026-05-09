@@ -977,23 +977,28 @@ function loadEcmSettingsUI() {
 
 // ── Main Button ───────────────────────────────────────────────
 function addEcmButton() {
-    const sendForm = document.getElementById('send_form');
-    if (!sendForm) return;
-
     const btn = document.createElement('div');
     btn.id = 'excerpt-card-btn';
     btn.textContent = '💌';
     btn.title = '발췌 카드 만들기';
-    btn.style.cssText = 'cursor:pointer;font-size:1.2em;padding:3px 5px;border-radius:5px;transition:background 0.2s;z-index:9999;align-self:flex-start;';
+    btn.style.cssText = 'cursor:pointer;font-size:1.2em;padding:3px 5px;border-radius:5px;transition:background 0.2s;z-index:9999;';
     btn.addEventListener('click', () => showExcerptCardPopup());
 
-    const boardBtn = document.getElementById('community-board-btn');
-    if (boardBtn) {
-        boardBtn.insertAdjacentElement('afterend', btn);
-    } else if (sendForm.firstChild) {
-        sendForm.insertBefore(btn, sendForm.firstChild);
+    // wrapper가 있으면 그 안에 추가, 없으면 새로 만들어서 삽입
+    const wrapper = document.getElementById('cb-btn-wrapper');
+    if (wrapper) {
+        wrapper.appendChild(btn);
     } else {
-        sendForm.appendChild(btn);
+        const newWrapper = document.createElement('div');
+        newWrapper.id = 'cb-btn-wrapper';
+        newWrapper.style.cssText = 'display:flex;flex-direction:row;gap:4px;align-self:flex-start;';
+        newWrapper.appendChild(btn);
+        const sendForm = document.getElementById('send_form');
+        if (sendForm && sendForm.firstChild) {
+            sendForm.insertBefore(newWrapper, sendForm.firstChild);
+        } else if (sendForm) {
+            sendForm.appendChild(newWrapper);
+        }
     }
 }
 
