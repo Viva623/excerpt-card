@@ -977,21 +977,6 @@ function loadEcmSettingsUI() {
 
 // ── Main Button ───────────────────────────────────────────────
 function addEcmButton() {
-    // 게시판 버튼 옆에 삽입
-    const boardBtn = document.getElementById('community-board-btn');
-    if (boardBtn && boardBtn.parentElement) {
-        const btn = document.createElement('div');
-        btn.id = 'excerpt-card-btn';
-        btn.textContent = '💌';
-        btn.title = '발췌 카드 만들기';
-        btn.style.cssText = 'position:relative;cursor:pointer;font-size:1.2em;padding:3px 5px;border-radius:5px;transition:background 0.2s;z-index:9999;';
-        btn.addEventListener('click', () => showExcerptCardPopup());
-        // 게시판 버튼 바로 뒤에 삽입
-        boardBtn.insertAdjacentElement('afterend', btn);
-        return;
-    }
-
-    // 게시판 버튼이 없으면 send_form에 추가
     const sendForm = document.getElementById('send_form');
     if (!sendForm) return;
 
@@ -999,9 +984,18 @@ function addEcmButton() {
     btn.id = 'excerpt-card-btn';
     btn.textContent = '💌';
     btn.title = '발췌 카드 만들기';
-    btn.style.cssText = 'position:relative;cursor:pointer;font-size:1.2em;padding:3px 5px;border-radius:5px;transition:background 0.2s;z-index:9999;';
+    btn.style.cssText = 'cursor:pointer;font-size:1.2em;padding:3px 5px;border-radius:5px;transition:background 0.2s;z-index:9999;order:-1;';
     btn.addEventListener('click', () => showExcerptCardPopup());
-    sendForm.appendChild(btn);
+
+    // 게시판 버튼이 있으면 그 옆에, 없으면 send_form 맨 앞에
+    const boardBtn = document.getElementById('community-board-btn');
+    if (boardBtn) {
+        boardBtn.insertAdjacentElement('afterend', btn);
+    } else if (sendForm.firstChild) {
+        sendForm.insertBefore(btn, sendForm.firstChild);
+    } else {
+        sendForm.appendChild(btn);
+    }
 }
 
 // ── Init ──────────────────────────────────────────────────────
